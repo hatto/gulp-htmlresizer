@@ -1,0 +1,23 @@
+{
+  "name": "html-image-resize",
+  "version": "0.0.1",
+  "description": "",
+  "main": "src/index.js",
+  "bin": {
+    "image-resize": "cli.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Peter Kracik",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+  },
+  "path": {
+    "src": {},
+    "dist": {}
+  },
+  "devDependencies": {
+    "cheerio": "^0.20.0"
+  }
+}

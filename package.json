@@ -11,13 +11,14 @@
   },
   "author": "Peter Kracik",
   "license": "BSD-2-Clause",
-  "dependencies": {
-  },
+  "dependencies": {},
   "path": {
     "src": {},
     "dist": {}
   },
   "devDependencies": {
-    "cheerio": "^0.20.0"
+    "cheerio": "^0.20.0",
+    "gulp": "^3.9.1",
+    "map-stream": "0.0.6"
   }
 }

@@ -15,38 +15,20 @@ const contentTypes = {
   ".webp": "image/webp"
 }
 
-module.exports = function(htmlFile, relFilePath, relFileDestPath) {
+module.exports = function(htmlFile, relFilePath, options) {
   var image = null;
   const base = process.cwd(),
         relPath = relFilePath,
         fullPath = path.join(base, relPath),
-        relDestPath = relFileDestPath || relPath,
+        relDestPath = options.destPath || relPath,
         fullDestPath = path.join(base, relDestPath),
         fileHtml = htmlFile,
-        dom = cheerio.load(String(fileHtml))
+        dom = cheerio.load(String(fileHtml)),
+        force = options.force || false
   ;
 
-  // return htmlImageResize(dom).html({decodeEntities: false});
-
-  console.log('function');
-  var p1 = new Promise(
-    function(resolve, reject) {
-      console.log('return');
-      htmlImageResize(dom, function() {});
-      console.log('promise return');
-    }
-  );
-  p1.then(
-    function() {
-      console.log('then');
-    })
-  .catch(
-    function() {
-      console.log('catch');
-    }
-  );
-
-  console.log('module return');
+  // call resize function
+  htmlImageResize(dom);
   return dom.html({decodeEntities: false})
 
   /**
@@ -54,7 +36,7 @@ module.exports = function(htmlFile, relFilePath, relFileDestPath) {
    * @param  {Object} dom   cheerio DOM object
    * @return {Object}       cheerio DOM object
    */
-  function htmlImageResize(dom, cb) {
+  function htmlImageResize(dom) {
     dom('img').each(function(index, el) {
       el = dom(el);
       const src = el.attr('src') || null,
@@ -156,9 +138,20 @@ module.exports = function(htmlFile, relFilePath, relFileDestPath) {
     if (image.resize.height) {
       options.height = image.resize.height;
     }
-    // resize image
-    im.resize(options, function(err) {
-      if (err != null) {
+
+    // verify if the file already exists
+    fs.stat(image.dest, function(err, stat) {
+      // if file doesnt exist or force flag is set to true
+      if (err != null || force) {
+        // resize image
+        im.resize(options, function(err) {
+          if (err != null) {
+            // if error, try to create folder and call resize as a callback
+            createFolder(image, function() {
+              resize(image);
+            });
+          }
+        });
       }
     });
     return image;
@@ -170,16 +163,51 @@ module.exports = function(htmlFile, relFilePath, relFileDestPath) {
    * @return {String}         new image name
    */
   function crop(image) {
-    im.crop({
-      srcPath: image.file,
-      dstPath: image.dest,
-      width:   image.resize.width,
-      height:   image.resize.height,
-      quality: 1
-    }, function(err) {
-      if (err != null) {
+    // verify if the file already exists
+    fs.stat(image.dest, function(err, stat) {
+      // if file doesnt exist or force flag is set to true
+      if (err != null || force) {
+        // crop image
+        im.crop({
+          srcPath: image.file,
+          dstPath: image.dest,
+          width:   image.resize.width,
+          height:  image.resize.height,
+          quality: 1
+        }, function(err) {
+          if (err != null) {
+            // if error, try to create folder and call crop as a callback
+            createFolder(image, function() {
+              crop(image);
+            });
+          }
+        });
       }
     });
+
+    return image;
+  }
+
+  /**
+   * try to create folder
+   * first verify if it image what is missing, otherwise try to create folder and call callback
+   * @param {image}     image     json object
+   * @param {function}  cb        callback
+   * @return {Object}             image object
+   */
+  function createFolder(image, cb) {
+    fs.stat(image.file, function(err, stat) {
+      if (err) {
+        return image;
+      }
+      else {
+        fs.mkdir(path.dirname(image.dest), function() {
+          cb(image);
+          return image;
+        });
+      }
+    });
+    return image;
   }
 
   /**
@@ -190,26 +218,21 @@ module.exports = function(htmlFile, relFilePath, relFileDestPath) {
   function createName(image, cb) {
     const extension = path.extname(image.file);
     var newFileName = "";
+
+    // add width to the name
     if (image.resize.width) {
       newFileName += "_w" + image.resize.width;
     }
+
+    // add height to the name
     if (image.resize.height) {
       newFileName += "_h" + image.resize.height;
     }
+
     newFileName += extension;
-    const newname = image.fileName.replace(extension, newFileName);
+    var newname = image.fileName.replace(extension, newFileName);
     image.newname = newname;
     image.dest = path.join(relDestPath, image.newname);
     return image;
-    // fs.stat(path.dirname(image.dest), function(err, stat) {
-    //   if (err) {
-    //     fs.mkdir(path.dirname(image.dest), function() {
-    //       cb(image);
-    //     });
-    //   } else {
-    //     cb(image);
-    //   }
-    // });
-
   }
 }

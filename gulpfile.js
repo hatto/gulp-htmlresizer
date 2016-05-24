@@ -6,7 +6,8 @@ gulp.task('resize', function () {
     return gulp
         .src('./example/*.html')
         .pipe(resize({
-            'destPath' : './dist'
+            'destPath' : './dist',
+            'force'    : true
         }))
         .pipe(gulp.dest('', { cwd: './dist' }));
 });

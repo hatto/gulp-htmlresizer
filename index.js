@@ -22,7 +22,7 @@ function gulpresize(options) {
 
         if (file.isBuffer()) {
             var relPath = path.relative(file.cwd, file.base);
-            file.contents = new Buffer(imgresize(String(file.contents), relPath, options.destPath));
+            file.contents = new Buffer(imgresize(String(file.contents), relPath, options));
         }
 
         // make sure the file goes through the next gulp plugin

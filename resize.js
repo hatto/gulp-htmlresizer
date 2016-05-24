@@ -26,12 +26,36 @@ module.exports = function(htmlFile, relFilePath, relFileDestPath) {
         dom = cheerio.load(String(fileHtml))
   ;
 
-  htmlImageResize(dom);
-  return dom.html({decodeEntities: false});
+  // return htmlImageResize(dom).html({decodeEntities: false});
 
-  function htmlImageResize(dom) {
+  console.log('function');
+  var p1 = new Promise(
+    function(resolve, reject) {
+      console.log('return');
+      htmlImageResize(dom, function() {});
+      console.log('promise return');
+    }
+  );
+  p1.then(
+    function() {
+      console.log('then');
+    })
+  .catch(
+    function() {
+      console.log('catch');
+    }
+  );
 
-    dom('img').each(function(idx, el) {
+  console.log('module return');
+  return dom.html({decodeEntities: false})
+
+  /**
+   * parse DOM and call action on the elements
+   * @param  {Object} dom   cheerio DOM object
+   * @return {Object}       cheerio DOM object
+   */
+  function htmlImageResize(dom, cb) {
+    dom('img').each(function(index, el) {
       el = dom(el);
       const src = el.attr('src') || null,
             width = el.attr('img-width') || null,
@@ -58,19 +82,20 @@ module.exports = function(htmlFile, relFilePath, relFileDestPath) {
           resize: {
             width: width,
             height: height,
-            crop: el.attr('img-crop') === 'true'
+            crop: (width && height) ? true : false
           }
         };
 
-        image = createName(image, function(img) {
-          img = (img.resize.crop) ? crop(img) : resize(img);
-          if (img != null) {
-            el.attr('src', img.newname);
-            el.attr('img-width', null);
-            el.attr('img-height', null);
-            el.attr('img-crop', null);
-          }
-        });
+        image = createName(image);
+        image = (image.resize.crop) ? crop(image) : resize(image);
+
+        // change html img element attributes
+        if (image != null) {
+          el.attr('src', image.newname);
+        }
+        el.attr('img-width', null);
+        el.attr('img-height', null);
+
       } else { // external image
         // const extfile = src;
         // request.get(extfile, function (error, response, body) {
@@ -99,10 +124,8 @@ module.exports = function(htmlFile, relFilePath, relFileDestPath) {
         //   return null;
         // });
       }
-    });
-  }
 
-  function createImage(el, image) {
+    });
 
   }
 
@@ -177,16 +200,16 @@ module.exports = function(htmlFile, relFilePath, relFileDestPath) {
     const newname = image.fileName.replace(extension, newFileName);
     image.newname = newname;
     image.dest = path.join(relDestPath, image.newname);
-
-    fs.stat(path.dirname(image.dest), function(err, stat) {
-      if (err) {
-        fs.mkdir(path.dirname(image.dest), function() {
-          cb(image);
-        });
-      } else {
-        cb(image);
-      }
-    });
+    return image;
+    // fs.stat(path.dirname(image.dest), function(err, stat) {
+    //   if (err) {
+    //     fs.mkdir(path.dirname(image.dest), function() {
+    //       cb(image);
+    //     });
+    //   } else {
+    //     cb(image);
+    //   }
+    // });
 
   }
 }

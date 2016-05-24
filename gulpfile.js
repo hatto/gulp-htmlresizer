@@ -2,7 +2,7 @@ var gulp         = require('gulp'),
     resize       = require('./index')
     ;
 
-gulp.task('rename', function () {
+gulp.task('resize', function () {
     return gulp
         .src('./example/*.html')
         .pipe(resize({
